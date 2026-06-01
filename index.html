@@ -3,56 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aether • Real AI Agent</title>
+  <title>Aether • Debug Mode</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: #050505; color: #ddd; font-family: system-ui, sans-serif; }
-    .header { background: linear-gradient(135deg, #4c1d95, #9f1239); padding: 20px; text-align: center; font-size: 28px; font-weight: 700; }
-    .chat { height: 78vh; overflow-y: auto; padding: 25px; background: #111827; }
-    .message { margin: 15px 0; padding: 16px 22px; border-radius: 18px; max-width: 82%; line-height: 1.6; }
-    .user { background: #9f1239; color: white; margin-left: auto; }
-    .assistant { background: #1a1a2e; border: 1px solid #6b21a8; }
-    .input-area { padding: 20px; background: #111827; border-top: 1px solid #3b0764; }
-    input { width: 100%; padding: 18px 24px; background: #1a1a2e; border: 2px solid #6b21a8; border-radius: 9999px; color: white; font-size: 16px; outline: none; }
-    button { margin-top: 12px; padding: 14px 40px; background: #9f1239; color: white; border: none; border-radius: 9999px; font-weight: 600; cursor: pointer; }
+    body { background: #0a0a0a; color: #ddd; font-family: monospace; }
+    .header { background: #4c1d95; padding: 20px; text-align: center; font-size: 24px; }
+    .chat { height: 70vh; overflow-y: auto; padding: 20px; background: #111; }
+    .message { margin: 10px 0; padding: 12px; border-radius: 8px; }
+    .user { background: #7c3aed; color: white; margin-left: auto; max-width: 70%; }
+    .assistant { background: #1f2937; max-width: 80%; }
+    .error { background: #7f1d1d; color: #fda4af; }
+    input { width: 100%; padding: 15px; background: #1f2937; border: 1px solid #6b21a8; border-radius: 8px; color: white; }
+    button { padding: 15px 30px; background: #7c3aed; color: white; border: none; border-radius: 8px; }
   </style>
 </head>
 <body>
-  <div class="header">🌌 AETHER • REAL AI AGENT</div>
-  
+  <div class="header">🌌 AETHER - DEBUG MODE</div>
   <div class="chat" id="chat"></div>
   
-  <div class="input-area">
-    <input type="text" id="input" placeholder="Ask me anything... Research, business plan, honest advice, analyze, etc.">
-    <button onclick="sendMessage()">SEND</button>
+  <div style="padding:20px;background:#111;">
+    <input type="text" id="input" placeholder="Type here and press Enter" style="width:100%;padding:15px;">
   </div>
 
   <script>
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
-    let memory = JSON.parse(localStorage.getItem('aetherMemory') || '[]');
 
-    function addMessage(text, isUser) {
+    function addMessage(text, type) {
       const div = document.createElement('div');
-      div.className = `message ${isUser ? 'user' : 'assistant'}`;
-      div.innerHTML = text.replace(/\n/g, '<br>');
+      div.className = `message ${type}`;
+      div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
-      
-      if (!isUser) {
-        memory.push({ role: "assistant", content: text });
-        localStorage.setItem('aetherMemory', JSON.stringify(memory));
-      }
     }
 
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
 
-      addMessage(text, true);
+      addMessage(text, 'user');
       input.value = '';
 
-      const loading = addMessage("Thinking...", false);
+      const loading = document.createElement('div');
+      loading.textContent = "Thinking...";
+      loading.className = "message assistant";
+      chat.appendChild(loading);
+      chat.scrollTop = chat.scrollHeight;
 
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -63,25 +59,24 @@
           },
           body: JSON.stringify({
             model: "llama3-70b-8192",
-            messages: [
-              { role: "system", content: "You are Aether, a highly intelligent, honest, and helpful AI agent. The user is from Pakistan and is planning to start a scrap metal melting business (mainly aluminum). Be practical, direct, and useful. Give real advice." },
-              ...memory,
-              { role: "user", content: text }
-            ],
+            messages: [{ role: "user", content: text }],
             temperature: 0.7,
-            max_tokens: 1500
+            max_tokens: 800
           })
         });
+
+        if (!res.ok) throw new Error('API Error: ' + res.status);
 
         const data = await res.json();
         const reply = data.choices[0].message.content;
 
         chat.removeChild(loading);
-        addMessage(reply, false);
+        addMessage(reply, 'assistant');
 
       } catch (err) {
         chat.removeChild(loading);
-        addMessage("Sorry, I couldn't connect to the AI. Please check your internet or try again.", false);
+        addMessage("ERROR: " + err.message, 'error');
+        console.error(err);
       }
     }
 
@@ -89,17 +84,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Load previous memory
-    if (memory.length > 0) {
-      memory.forEach(m => {
-        const div = document.createElement('div');
-        div.className = `message ${m.role === 'user' ? 'user' : 'assistant'}`;
-        div.innerHTML = m.content.replace(/\n/g, '<br>');
-        chat.appendChild(div);
-      });
-    } else {
-      addMessage("I'm ready. Ask me anything about your scrap metal business, research, planning, or personal matters. I have memory and will be direct with you.", false);
-    }
+    addMessage("Debug mode activated. Type something and press Enter. Any error will be shown clearly.", 'assistant');
   </script>
 </body>
 </html>
