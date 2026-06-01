@@ -3,49 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aether Debug</title>
+  <title>Aether • Real Agent</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: #050505; color: #ddd; font-family: monospace; padding: 20px; }
-    .chat { height: 70vh; overflow-y: auto; background: #111; padding: 15px; }
-    .message { margin: 10px 0; padding: 12px; border-radius: 8px; }
-    .user { background: #7c3aed; color: white; }
-    .assistant { background: #1f2937; }
-    .error { background: #450a0a; color: #fda4af; border: 1px solid #b91c1c; }
-    input { width: 100%; padding: 15px; background: #1f1f1f; border: 1px solid #444; border-radius: 8px; color: white; margin-top: 10px; }
-    button { padding: 15px 30px; background: #7c3aed; color: white; border: none; border-radius: 8px; margin-top: 10px; }
+    body { background: #050505; color: #ddd; font-family: system-ui, sans-serif; }
+    .header { background: linear-gradient(135deg, #4c1d95, #9f1239); padding: 20px; text-align: center; font-size: 28px; font-weight: 700; }
+    .chat { height: 78vh; overflow-y: auto; padding: 25px; background: #111827; }
+    .message { margin: 15px 0; padding: 16px 22px; border-radius: 18px; max-width: 82%; line-height: 1.6; }
+    .user { background: #9f1239; color: white; margin-left: auto; }
+    .assistant { background: #1a1a2e; border: 1px solid #6b21a8; }
+    .input-area { padding: 20px; background: #111827; border-top: 1px solid #3b0764; }
+    input { width: 100%; padding: 18px 24px; background: #1a1a2e; border: 2px solid #6b21a8; border-radius: 9999px; color: white; font-size: 16px; outline: none; }
+    button { margin-top: 12px; padding: 14px 40px; background: #9f1239; color: white; border: none; border-radius: 9999px; font-weight: 600; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1 class="text-2xl mb-4 text-purple-400">Aether - Debug Mode</h1>
+  <div class="header">🌌 AETHER • REAL AI AGENT</div>
+  
   <div class="chat" id="chat"></div>
   
-  <input type="text" id="input" placeholder="Type here and press Enter" />
-  <button onclick="sendMessage()">Send</button>
+  <div class="input-area">
+    <input type="text" id="input" placeholder="Ask me anything... Research, business plan, honest advice...">
+    <button onclick="sendMessage()">SEND</button>
+  </div>
 
   <script>
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
+    let memory = JSON.parse(localStorage.getItem('aetherMemory') || '[]');
 
-    function addMessage(text, type = 'assistant') {
+    function addMessage(text, isUser) {
       const div = document.createElement('div');
-      div.className = `message ${type}`;
-      div.textContent = text;
+      div.className = `message ${isUser ? 'user' : 'assistant'}`;
+      div.innerHTML = text.replace(/\n/g, '<br>');
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+      
+      if (!isUser) {
+        memory.push({ role: "assistant", content: text });
+        localStorage.setItem('aetherMemory', JSON.stringify(memory));
+      }
     }
 
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
 
-      addMessage("You: " + text, 'user');
+      addMessage(text, true);
       input.value = '';
 
-      const loading = document.createElement('div');
-      loading.textContent = "Calling Groq API...";
-      loading.className = "message assistant";
-      chat.appendChild(loading);
+      const loading = addMessage("Thinking...", false);
 
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -55,26 +62,31 @@
             'Authorization': 'Bearer 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'
           },
           body: JSON.stringify({
-            model: "llama3-70b-8192",
-            messages: [{ role: "user", content: text }],
+            model: "llama-3.1-8b-instant",     // ← This is currently active and free
+            messages: [
+              { role: "system", content: "You are Aether, a helpful, honest, and practical AI agent. The user is from Pakistan and wants to start a scrap metal melting business. Be direct, useful, and give real advice." },
+              ...memory,
+              { role: "user", content: text }
+            ],
             temperature: 0.7,
-            max_tokens: 800
+            max_tokens: 1200
           })
         });
 
-        const data = await res.json();
-
         if (!res.ok) {
-          throw new Error(`API Error ${res.status}: ${data.error?.message || JSON.stringify(data)}`);
+          const errorData = await res.json();
+          throw new Error(errorData.error?.message || 'Unknown API error');
         }
 
+        const data = await res.json();
         const reply = data.choices[0].message.content;
+
         chat.removeChild(loading);
-        addMessage("Aether: " + reply);
+        addMessage(reply, false);
 
       } catch (err) {
         chat.removeChild(loading);
-        addMessage("ERROR: " + err.message, 'error');
+        addMessage("ERROR: " + err.message, 'red');
         console.error(err);
       }
     }
@@ -83,7 +95,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    addMessage("Debug mode started. Type a message and press Enter. The exact error will be shown.", 'assistant');
+    addMessage("Real AI Agent activated using Llama 3.1 8B Instant. I'm ready. Ask me anything about your scrap metal business or any other topic.", false);
   </script>
 </body>
 </html>
