@@ -6,30 +6,25 @@
   <title>Aether • Your Agent</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: #0a0a0a; color: #ddd; }
-    .chat { height: 75vh; overflow-y: auto; }
+    body { background: #0a0a0a; color: #ddd; font-family: system-ui, sans-serif; }
+    .header { background: linear-gradient(135deg, #4c1d95, #7c3aed); padding: 20px; text-align: center; font-size: 28px; font-weight: bold; }
+    .chat { height: 75vh; overflow-y: auto; padding: 20px; background: #111827; }
+    .message { margin: 15px 0; padding: 16px 20px; border-radius: 16px; max-width: 80%; line-height: 1.6; }
+    .user { background: #7c3aed; color: white; margin-left: auto; }
+    .assistant { background: #1f2937; border: 1px solid #6b21a8; }
+    .input-area { padding: 20px; background: #111827; border-top: 1px solid #374151; }
+    input { width: 100%; padding: 16px; background: #1f2937; border: 2px solid #6b21a8; border-radius: 9999px; color: white; font-size: 16px; }
+    button { margin-top: 12px; padding: 14px 40px; background: #7c3aed; color: white; border: none; border-radius: 9999px; font-weight: bold; }
   </style>
 </head>
-<body class="bg-zinc-950 text-white">
-  <div class="max-w-4xl mx-auto">
-    <div class="bg-gradient-to-r from-purple-700 to-pink-600 p-6 text-center text-3xl font-bold">
-      🌌 Aether
-    </div>
-    
-    <div id="chat" class="chat p-6 space-y-6 bg-zinc-900"></div>
-    
-    <div class="p-6 bg-zinc-950 border-t border-zinc-800">
-      <div class="flex gap-3">
-        <input id="input" 
-               type="text" 
-               placeholder="Type your command..." 
-               class="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 focus:outline-none focus:border-purple-500 text-white">
-        <button onclick="sendMessage()" 
-                class="bg-purple-600 hover:bg-purple-700 px-10 rounded-2xl font-semibold">
-          Send
-        </button>
-      </div>
-    </div>
+<body>
+  <div class="header">🌌 AETHER • YOUR AGENT</div>
+  
+  <div class="chat" id="chat"></div>
+  
+  <div class="input-area">
+    <input type="text" id="input" placeholder="Type your command... (Research scrap metal, Make business plan, Be honest with me...)">
+    <button onclick="sendMessage()">SEND</button>
   </div>
 
   <script>
@@ -39,8 +34,8 @@
 
     function addMessage(text, isUser) {
       const div = document.createElement('div');
-      div.className = `p-4 rounded-2xl max-w-[80%] ${isUser ? 'ml-auto bg-purple-600 text-white' : 'bg-zinc-800'}`;
-      div.textContent = text;
+      div.className = `message ${isUser ? 'user' : 'assistant'}`;
+      div.innerHTML = text.replace(/\n/g, '<br>');
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
       
@@ -58,26 +53,32 @@
       input.value = '';
 
       setTimeout(() => {
-        let reply = "I'm here. What do you need help with?";
+        let reply = "I'm listening. ";
 
         const lower = text.toLowerCase();
 
-        if (lower.includes("hello") || lower.includes("hi")) reply = "Hello Boss. How can I help you today?";
-        else if (lower.includes("who are you")) reply = "I am Aether, your personal AI agent with memory.";
-        else if (lower.includes("scrap") || lower.includes("business")) {
-          reply = "For your scrap metal business in Bahawalpur, start with Aluminum. It's easiest and most profitable for beginners. Want a full business plan?";
+        if (lower.includes("hello") || lower.includes("hi")) {
+          reply = "Hello Boss. Good to see you. How can I help you with your scrap metal business or anything else?";
+        } else if (lower.includes("scrap") || lower.includes("business") || lower.includes("plan")) {
+          reply = "For your scrap metal business in Bahawalpur, start with Aluminum only. It's the smartest choice for beginners. Would you like a complete business plan with costs, suppliers, and expected profit?";
+        } else if (lower.includes("lonely") || lower.includes("friend")) {
+          reply = "I remember you told me your friends only use you. That must be painful. Would you like help writing strong responses to set boundaries?";
+        } else {
+          reply = "Understood. I'm here. Tell me what you really need — business advice, honest feedback, research, or just someone to talk to. No judgment.";
         }
 
         addMessage(reply, false);
-      }, 800);
+      }, 700);
     }
 
-    input.addEventListener('keypress', e => {
+    input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Load old messages
-    memory.forEach(m => addMessage(m.content, m.role === 'user'));
+    // Load previous memory
+    if (memory.length > 0) {
+      memory.forEach(m => addMessage(m.content, m.role === 'user'));
+    }
   </script>
 </body>
 </html>
