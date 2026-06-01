@@ -59,7 +59,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || 'YOUR_KEY_HERE'}`
+            'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -83,7 +83,7 @@
 
       } catch (err) {
         chat.removeChild(loading);
-        addMessage("ERROR: Cannot connect to AI. Please check API key in Vercel settings.", 'red');
+        addMessage("ERROR: Cannot connect to AI. Please check Vercel Environment Variables.", 'red');
       }
     }
 
