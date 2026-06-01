@@ -23,7 +23,7 @@
   <div class="chat" id="chat"></div>
   
   <div class="input-area">
-    <input type="text" id="input" placeholder="Ask me anything... Research, business plan, honest advice...">
+    <input type="text" id="input" placeholder="Ask me anything...">
     <button onclick="sendMessage()">SEND</button>
   </div>
 
@@ -59,24 +59,21 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer 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'
+            'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || 'YOUR_KEY_HERE'}`
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",     // ← This is currently active and free
+            model: "llama-3.1-8b-instant",
             messages: [
-              { role: "system", content: "You are Aether, a helpful, honest, and practical AI agent. The user is from Pakistan and wants to start a scrap metal melting business. Be direct, useful, and give real advice." },
+              { role: "system", content: "You are Aether, a helpful, honest, and practical AI agent. The user is from Pakistan and wants to start a scrap metal melting business. Be direct and useful." },
               ...memory,
               { role: "user", content: text }
             ],
             temperature: 0.7,
-            max_tokens: 1200
+            max_tokens: 1000
           })
         });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error?.message || 'Unknown API error');
-        }
+        if (!res.ok) throw new Error('API Error');
 
         const data = await res.json();
         const reply = data.choices[0].message.content;
@@ -86,8 +83,7 @@
 
       } catch (err) {
         chat.removeChild(loading);
-        addMessage("ERROR: " + err.message, 'red');
-        console.error(err);
+        addMessage("ERROR: Cannot connect to AI. Please check API key in Vercel settings.", 'red');
       }
     }
 
@@ -95,7 +91,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    addMessage("Real AI Agent activated using Llama 3.1 8B Instant. I'm ready. Ask me anything about your scrap metal business or any other topic.", false);
+    addMessage("Real AI Agent is ready. I have memory and can help with your scrap metal business. Ask me anything.", false);
   </script>
 </body>
 </html>
